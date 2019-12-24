@@ -24,13 +24,10 @@ jobs:
           command: make test-coverage
       - deploy:
           name: deploy
-          command: .circleci/deploy.sh
+          command: .circleci/deploy-s3.sh
 
 workflows:
   version: 2
   build:
     jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
+      - build
