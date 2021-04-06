@@ -22,13 +22,11 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/spf13/pflag"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
-	diskcached "k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
@@ -66,7 +64,7 @@ type RESTClientGetter interface {
 	// ToRESTConfig returns restconfig
 	ToRESTConfig() (*rest.Config, error)
 	// ToDiscoveryClient returns discovery client
-	ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error)
+	ToDiscoveryClient() (discovery.DiscoveryInterface, error)
 	// ToRESTMapper returns a restmapper
 	ToRESTMapper() (meta.RESTMapper, error)
 	// ToRawKubeConfigLoader return kubeconfig loader as-is
@@ -215,28 +213,13 @@ func (f *ConfigFlags) toRawKubePersistentConfigLoader() clientcmd.ClientConfig {
 // ToDiscoveryClient implements RESTClientGetter.
 // Expects the AddFlags method to have been called.
 // Returns a CachedDiscoveryInterface using a computed RESTConfig.
-func (f *ConfigFlags) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+func (f *ConfigFlags) ToDiscoveryClient() (discovery.DiscoveryInterface, error) {
 	config, err := f.ToRESTConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	// The more groups you have, the more discovery requests you need to make.
-	// given 25 groups (our groups + a few custom resources) with one-ish version each, discovery needs to make 50 requests
-	// double it just so we don't end up here again for a while.  This config is only used for discovery.
-	config.Burst = 100
-
-	cacheDir := defaultCacheDir
-
-	// retrieve a user-provided value for the "cache-dir"
-	// override httpCacheDir and discoveryCacheDir if user-value is given.
-	if f.CacheDir != nil {
-		cacheDir = *f.CacheDir
-	}
-	httpCacheDir := filepath.Join(cacheDir, "http")
-	discoveryCacheDir := computeDiscoverCacheDir(filepath.Join(cacheDir, "discovery"), config.Host)
-
-	return diskcached.NewCachedDiscoveryClientForConfig(config, discoveryCacheDir, httpCacheDir, time.Duration(10*time.Minute))
+	return discovery.NewDiscoveryClientForConfig(config)
 }
 
 // ToRESTMapper returns a mapper.

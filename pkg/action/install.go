@@ -154,7 +154,6 @@ func (i *Install) installCRDs(crds []chart.CRD) error {
 			return err
 		}
 		i.cfg.Log("Clearing discovery cache")
-		discoveryClient.Invalidate()
 		// Give time for the CRD to be recognized.
 
 		if err := i.cfg.KubeClient.Wait(totalItems, 60*time.Second); err != nil {

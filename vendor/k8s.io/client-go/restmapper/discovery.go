@@ -179,13 +179,13 @@ func GetAPIGroupResources(cl discovery.DiscoveryInterface) ([]*APIGroupResources
 type DeferredDiscoveryRESTMapper struct {
 	initMu   sync.Mutex
 	delegate meta.RESTMapper
-	cl       discovery.CachedDiscoveryInterface
+	cl       discovery.DiscoveryInterface
 }
 
 // NewDeferredDiscoveryRESTMapper returns a
 // DeferredDiscoveryRESTMapper that will lazily query the provided
 // client for discovery information to do REST mappings.
-func NewDeferredDiscoveryRESTMapper(cl discovery.CachedDiscoveryInterface) *DeferredDiscoveryRESTMapper {
+func NewDeferredDiscoveryRESTMapper(cl discovery.DiscoveryInterface) *DeferredDiscoveryRESTMapper {
 	return &DeferredDiscoveryRESTMapper{
 		cl: cl,
 	}
@@ -216,7 +216,6 @@ func (d *DeferredDiscoveryRESTMapper) Reset() {
 	d.initMu.Lock()
 	defer d.initMu.Unlock()
 
-	d.cl.Invalidate()
 	d.delegate = nil
 }
 
@@ -228,10 +227,7 @@ func (d *DeferredDiscoveryRESTMapper) KindFor(resource schema.GroupVersionResour
 		return schema.GroupVersionKind{}, err
 	}
 	gvk, err = del.KindFor(resource)
-	if err != nil && !d.cl.Fresh() {
-		d.Reset()
-		gvk, err = d.KindFor(resource)
-	}
+
 	return
 }
 
@@ -243,10 +239,7 @@ func (d *DeferredDiscoveryRESTMapper) KindsFor(resource schema.GroupVersionResou
 		return nil, err
 	}
 	gvks, err = del.KindsFor(resource)
-	if len(gvks) == 0 && !d.cl.Fresh() {
-		d.Reset()
-		gvks, err = d.KindsFor(resource)
-	}
+
 	return
 }
 
@@ -258,10 +251,7 @@ func (d *DeferredDiscoveryRESTMapper) ResourceFor(input schema.GroupVersionResou
 		return schema.GroupVersionResource{}, err
 	}
 	gvr, err = del.ResourceFor(input)
-	if err != nil && !d.cl.Fresh() {
-		d.Reset()
-		gvr, err = d.ResourceFor(input)
-	}
+
 	return
 }
 
@@ -273,10 +263,7 @@ func (d *DeferredDiscoveryRESTMapper) ResourcesFor(input schema.GroupVersionReso
 		return nil, err
 	}
 	gvrs, err = del.ResourcesFor(input)
-	if len(gvrs) == 0 && !d.cl.Fresh() {
-		d.Reset()
-		gvrs, err = d.ResourcesFor(input)
-	}
+
 	return
 }
 
@@ -288,10 +275,7 @@ func (d *DeferredDiscoveryRESTMapper) RESTMapping(gk schema.GroupKind, versions 
 		return nil, err
 	}
 	m, err = del.RESTMapping(gk, versions...)
-	if err != nil && !d.cl.Fresh() {
-		d.Reset()
-		m, err = d.RESTMapping(gk, versions...)
-	}
+
 	return
 }
 
@@ -304,10 +288,7 @@ func (d *DeferredDiscoveryRESTMapper) RESTMappings(gk schema.GroupKind, versions
 		return nil, err
 	}
 	ms, err = del.RESTMappings(gk, versions...)
-	if len(ms) == 0 && !d.cl.Fresh() {
-		d.Reset()
-		ms, err = d.RESTMappings(gk, versions...)
-	}
+
 	return
 }
 
@@ -319,10 +300,7 @@ func (d *DeferredDiscoveryRESTMapper) ResourceSingularizer(resource string) (sin
 		return resource, err
 	}
 	singular, err = del.ResourceSingularizer(resource)
-	if err != nil && !d.cl.Fresh() {
-		d.Reset()
-		singular, err = d.ResourceSingularizer(resource)
-	}
+
 	return
 }
 

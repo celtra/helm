@@ -228,7 +228,7 @@ func (c *Configuration) renderResources(ch *chart.Chart, values chartutil.Values
 // RESTClientGetter gets the rest client
 type RESTClientGetter interface {
 	ToRESTConfig() (*rest.Config, error)
-	ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error)
+	ToDiscoveryClient() (discovery.DiscoveryInterface, error)
 	ToRESTMapper() (meta.RESTMapper, error)
 }
 
@@ -245,7 +245,6 @@ func (c *Configuration) getCapabilities() (*chartutil.Capabilities, error) {
 		return nil, errors.Wrap(err, "could not get Kubernetes discovery client")
 	}
 	// force a discovery cache invalidation to always fetch the latest server version/capabilities.
-	dc.Invalidate()
 	kubeVersion, err := dc.ServerVersion()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get server version from Kubernetes")
@@ -417,4 +416,17 @@ func (c *Configuration) Init(getter genericclioptions.RESTClientGetter, namespac
 	c.Log = log
 
 	return nil
+}
+
+
+type MyCachedDiscoveryInterface struct {
+	discovery.DiscoveryClient
+}
+
+func (c *MyCachedDiscoveryInterface) Fresh() bool {
+	return true
+}
+
+func (c *MyCachedDiscoveryInterface) Invalidate() {
+
 }

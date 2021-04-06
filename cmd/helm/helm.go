@@ -20,8 +20,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
+	"runtime/trace"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
@@ -59,6 +62,22 @@ func warning(format string, v ...interface{}) {
 }
 
 func main() {
+	t := time.Now()
+	d := fmt.Sprintf("helm-%s-%d.txt", t.Format("2006-01-02-15-04-05"), rand.Int())
+	fi, err := os.Create(d)
+	if err != nil {
+		panic(err)
+	}
+	// close fi on exit and check for its returned error
+	defer func() {
+		if err := fi.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	trace.Start(fi)
+	defer trace.Stop()
+
 	actionConfig := new(action.Configuration)
 	cmd, err := newRootCmd(actionConfig, os.Stdout, os.Args[1:])
 	if err != nil {
