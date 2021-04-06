@@ -67,7 +67,7 @@ func (f *factoryImpl) ToRESTMapper() (meta.RESTMapper, error) {
 	return f.clientGetter.ToRESTMapper()
 }
 
-func (f *factoryImpl) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+func (f *factoryImpl) ToDiscoveryClient() (discovery.DiscoveryInterface, error) {
 	return f.clientGetter.ToDiscoveryClient()
 }
 
